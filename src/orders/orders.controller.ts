@@ -74,6 +74,13 @@ export class OrdersController {
     return this.ordersService.findAvailable(query);
   }
 
+  @Get('rider/active')
+  @Roles(Role.Rider)
+  @UseGuards(RiderVerifiedGuard)
+  getRiderActiveOrder(@Req() req: AuthenticatedRequest): Promise<Order | null> {
+    return this.ordersService.getRiderActiveOrder(req.user);
+  }
+
   @Patch('accept/:id')
   @Roles(Role.Rider)
   @UseGuards(RiderVerifiedGuard)

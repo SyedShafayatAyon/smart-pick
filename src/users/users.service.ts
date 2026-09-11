@@ -82,15 +82,25 @@ export class UsersService implements OnModuleInit {
   }
 
   async findProfile(userId: number) {
-    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    const user = await this.usersRepo.findOne({
+      where: { id: userId },
+      relations: { riderVerification: true },
+    });
     if (!user) {
       throw new NotFoundException('User not found');
     }
-    return user;
+    const { password, ...result } = user;
+    return result;
   }
 
   async updateProfile(userId: number, updateUserDto: UpdateUserDto) {
-    const user = await this.findProfile(userId);
+    const user = await this.usersRepo.findOne({
+      where: { id: userId },
+      relations: { riderVerification: true },
+    });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
     if (updateUserDto.name) {
       user.name = updateUserDto.name;
@@ -113,17 +123,27 @@ export class UsersService implements OnModuleInit {
     if (updateUserDto.password) {
       user.password = await bcrypt.hash(updateUserDto.password, 10);
     }
-    return await this.usersRepo.save(user);
+    const savedUser = await this.usersRepo.save(user);
+    const { password, ...result } = savedUser;
+    return result;
   }
 
   async suspendUser(userId: number) {
-    const user = await this.findProfile(userId);
+    const user = await this.usersRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     user.isActive = false;
-    return this.usersRepo.save(user);
+    const savedUser = await this.usersRepo.save(user);
+    const { password, ...result } = savedUser;
+    return result;
   }
 
   async findAllUsers() {
-    return this.usersRepo.find();
+    const users = await this.usersRepo.find({
+      relations: { riderVerification: true },
+    });
+    return users.map(({ password, ...user }) => user);
   }
 }
 

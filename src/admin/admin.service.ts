@@ -19,6 +19,23 @@ export class AdminService {
     private readonly orderRepo: Repository<Order>,
   ) {}
 
+  async getAllRiders() {
+    const riders = await this.userRepo.find({
+      where: { role: Role.Rider },
+      relations: { riderVerification: true },
+      order: { createdAt: 'DESC' },
+    });
+    return riders.map(({ password, ...rider }) => rider);
+  }
+
+  async getAllUsers() {
+    const users = await this.userRepo.find({
+      relations: { riderVerification: true },
+      order: { createdAt: 'DESC' },
+    });
+    return users.map(({ password, ...user }) => user);
+  }
+
   async verifyRider(userId: number, dto: VerifyRiderDto) {
     const riderVerification = await this.riderVerificationRepo.findOne({
       where: { user: { id: userId } },

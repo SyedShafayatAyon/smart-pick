@@ -191,6 +191,34 @@ export class OrdersService {
 
   // ---- RIDER LOGIC ----
 
+  async getRiderActiveOrder(rider: { id: number }): Promise<Order | null> {
+    await this.assertRiderVerified(rider.id);
+
+    const order = await this.orderRepository.findOne({
+      where: [
+        { riderId: rider.id, status: OrderStatus.Accepted },
+        { riderId: rider.id, status: OrderStatus.PickedUp },
+        { riderId: rider.id, status: OrderStatus.InTransit },
+        { rider: { id: rider.id }, status: OrderStatus.Accepted },
+        { rider: { id: rider.id }, status: OrderStatus.PickedUp },
+        { rider: { id: rider.id }, status: OrderStatus.InTransit },
+      ],
+      relations: {
+        customer: true,
+      },
+      order: {
+        acceptedAt: 'DESC',
+        id: 'DESC',
+      },
+    });
+
+    if (order?.customer) {
+      delete (order.customer as any).password;
+    }
+
+    return order;
+  }
+
   async findAvailable(query: FindAvailableOrdersDto): Promise<Order[]> {
     const where: FindOptionsWhere<Order> = { status: OrderStatus.Pending };
     if (query.pickupZoneId) where.pickupZoneId = query.pickupZoneId;
